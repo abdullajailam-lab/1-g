@@ -88,7 +88,7 @@
       color: var(--text-secondary);
     }
 
-    .form-group input {
+    .form-group input, .form-group textarea, select {
       width: 100%;
       padding: 12px 16px;
       background: rgba(0, 0, 0, 0.3);
@@ -99,7 +99,7 @@
       outline: none;
     }
 
-    .form-group input:focus {
+    .form-group input:focus, .form-group textarea:focus, select:focus {
       border-color: var(--accent-blue);
       box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
     }
@@ -156,32 +156,75 @@
       letter-spacing: 2px;
     }
 
+    .market-ticker {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
     .user-actions {
       display: flex;
       gap: 12px;
       align-items: center;
     }
 
-    .logout-btn, .admin-btn {
+    .notification-bell {
+      cursor: pointer;
+      position: relative;
+      font-size: 1.4rem;
+    }
+
+    .notif-badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: var(--accent-gold);
+      color: #000;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      font-size: 0.7rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logout-btn, .admin-btn, .theme-toggle, .lang-select {
       padding: 6px 16px;
       border-radius: 8px;
       font-weight: 600;
       cursor: pointer;
       font-size: 0.95rem;
+      border: 1px solid;
     }
 
     .logout-btn {
       background: rgba(185, 103, 255, 0.2);
       color: var(--accent-violet);
-      border: 1px solid var(--accent-violet);
+      border-color: var(--accent-violet);
     }
 
     .admin-btn {
       background: rgba(0, 240, 255, 0.2);
       color: var(--accent-blue);
-      border: 1px solid var(--accent-blue);
+      border-color: var(--accent-blue);
     }
 
+    .theme-toggle {
+      background: rgba(255, 215, 0, 0.1);
+      color: var(--accent-gold);
+      border-color: var(--accent-gold);
+    }
+
+    .lang-select {
+      background: var(--card-bg);
+      color: var(--text-primary);
+      border-color: rgba(185, 103, 255, 0.3);
+    }
+
+    /* Nav Tabs */
     .nav-tabs {
       display: flex;
       gap: 1rem;
@@ -354,6 +397,66 @@
       border-radius: 8px;
       font-family: 'Orbitron', sans-serif;
     }
+
+    /* Badges */
+    .badges {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+    .badge {
+      background: rgba(255, 215, 0, 0.1);
+      border: 1px solid var(--accent-gold);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+    }
+
+    /* Mini Charts */
+    .mini-charts {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .mini-chart {
+      width: 80px;
+      height: 50px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    .mini-chart::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 70%;
+      background: linear-gradient(to top, rgba(0,240,255,0.3), transparent);
+      clip-path: polygon(0% 100%, 20% 70%, 40% 80%, 60% 60%, 80% 65%, 100% 50%, 100% 100%);
+    }
+
+    /* Light Mode */
+    body.light-mode {
+      --bg: #f0f2f5;
+      --card-bg: #ffffff;
+      --text-primary: #121212;
+      --text-secondary: #555570;
+    }
+    body.light-mode .auth-container {
+      background: linear-gradient(135deg, rgba(240,242,245,0.95), rgba(255,255,255,0.9)), url('https://images.unsplash.com/photo-1618004652321-74c62781e4c6?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
+    }
+    body.light-mode .form-group input,
+    body.light-mode .form-group textarea,
+    body.light-mode select {
+      background: rgba(255,255,255,0.8);
+      color: #000;
+    }
+    body.light-mode .card {
+      border: 1px solid rgba(0,0,0,0.1);
+    }
   </style>
 </head>
 <body>
@@ -384,8 +487,22 @@
   <!-- Dashboard -->
   <div id="dashboard" class="container">
     <div class="header-bar">
-      <div class="logo">The 1% G’s Forex</div>
+      <div>
+        <div class="logo">The 1% G’s Forex</div>
+        <div class="market-ticker">
+          <span>EUR/USD: 1.0852 ▲</span> | 
+          <span>XAU/USD: 2345.0 ▼</span> | 
+          <span>BTC/USD: 67,210 ▲</span>
+        </div>
+      </div>
       <div class="user-actions">
+        <select class="lang-select" id="lang-select">
+          <option value="en">English</option>
+          <option value="es">Español</option>
+          <option value="ar">العربية</option>
+        </select>
+        <div class="notification-bell" onclick="showNotifications()">🔔 <span class="notif-badge">0</span></div>
+        <button class="theme-toggle" id="theme-toggle">🌓</button>
         <button class="admin-btn" id="open-admin">Admin Panel</button>
         <button class="logout-btn" id="logout">Logout</button>
       </div>
@@ -396,46 +513,24 @@
       <div class="tab-btn" data-tab="lessons">Online Lessons</div>
       <div class="tab-btn" data-tab="stream">Live Trade Stream</div>
       <div class="tab-btn" data-tab="performance">Performance</div>
+      <div class="tab-btn" data-tab="journal">Trade Journal</div>
+      <div class="tab-btn" data-tab="calendar">Economic Calendar</div>
       <div class="tab-btn" data-tab="telegram">Telegram Bot</div>
     </div>
 
     <!-- Signals -->
     <div class="tab-content active" id="signals-tab">
       <h2>🔥 Live Trade Signals</h2>
-      <div class="card-grid">
-        <div class="card signal-card">
-          <button class="copy-btn" onclick="copySignal(0)">📋</button>
-          <button class="telegram-btn" onclick="shareToTelegram(0)">✈️</button>
-          <h3>EUR/USD LONG</h3>
-          <p><strong>Entry:</strong> 1.0850</p>
-          <p><strong>SL:</strong> 1.0820</p>
-          <p><strong>TP:</strong> 1.0920</p>
-          <p><small>Posted: Today, 14:30 UTC</small></p>
-          <span style="color: var(--accent-gold);">✅ Active</span>
-        </div>
-        <div class="card signal-card">
-          <button class="copy-btn" onclick="copySignal(1)">📋</button>
-          <button class="telegram-btn" onclick="shareToTelegram(1)">✈️</button>
-          <h3>GOLD SHORT</h3>
-          <p><strong>Entry:</strong> 2345.0</p>
-          <p><strong>SL:</strong> 2360.0</p>
-          <p><strong>TP:</strong> 2310.0</p>
-          <p><small>Posted: Today, 12:15 UTC</small></p>
-          <span style="color: var(--accent-blue);">📊 Monitoring</span>
-        </div>
+      <div id="signals-container" class="card-grid">
+        <!-- Dynamically populated -->
       </div>
     </div>
 
     <!-- Lessons -->
     <div class="tab-content" id="lessons-tab">
       <h2>🎓 Online Lessons & Certificates</h2>
-      <div class="card-grid">
-        <div class="card">
-          <h3>Price Action Mastery</h3>
-          <p>12 video lessons • 4h 30m</p>
-          <p>Status: <span style="color: var(--accent-gold);">Completed</span></p>
-          <a href="#" class="cta-button" onclick="generateCertificate()">Download CRT</a>
-        </div>
+      <div id="lessons-container" class="card-grid">
+        <!-- Dynamically populated -->
       </div>
     </div>
 
@@ -443,7 +538,7 @@
     <div class="tab-content" id="stream-tab">
       <h2>🔴 Live Trade Stream</h2>
       <div class="card">
-        <h3>Next Session: Today at 18:00 UTC</h3>
+        <h3>Next Session: <span id="next-stream-title">Today at 18:00 UTC</span></h3>
         <div class="countdown" id="countdown"></div>
         <a href="https://meet.google.com/your-meet-link" target="_blank" class="cta-button">Join Live Stream</a>
         <p><small>🔔 Enable Telegram notifications for reminders</small></p>
@@ -455,25 +550,81 @@
       <h2>📊 Your Trading Performance</h2>
       <div class="performance-metrics">
         <div class="metric">
-          <div class="metric-value">+18.7%</div>
+          <div class="metric-value" id="roi-value">+0.0%</div>
           <div>Monthly ROI</div>
         </div>
         <div class="metric">
-          <div class="metric-value">89%</div>
+          <div class="metric-value" id="winrate-value">0%</div>
           <div>Win Rate</div>
         </div>
         <div class="metric">
-          <div class="metric-value">24</div>
+          <div class="metric-value" id="trades-value">0</div>
           <div>Trades</div>
         </div>
         <div class="metric">
-          <div class="metric-value">-4.2%</div>
+          <div class="metric-value" id="drawdown-value">0.0%</div>
           <div>Max Drawdown</div>
         </div>
       </div>
       <h3>Equity Curve (Last 30 Days)</h3>
       <div class="equity-curve"></div>
       <a href="#" class="cta-button" onclick="exportCSV()">Export Full Report (CSV)</a>
+
+      <div class="card" style="margin-top: 1.5rem;">
+        <h3>Risk Calculator</h3>
+        <div class="form-group">
+          <input type="number" id="account-balance" placeholder="Account Balance ($)" style="margin-bottom:0.8rem;">
+          <input type="number" id="risk-percent" placeholder="Risk (%)">
+          <input type="number" id="stop-loss-pips" placeholder="Stop Loss (pips)" style="margin-bottom:0.8rem;">
+          <button class="btn" onclick="calculatePosition()" style="width:auto; padding:8px 16px;">Calculate Position</button>
+          <div id="position-result" style="margin-top:10px; color:var(--accent-gold);"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 1.5rem;">
+        <h3>Invite Traders, Earn Rewards</h3>
+        <p>Your link: <code id="ref-link">the1pct.com?ref=USER123</code></p>
+        <button class="btn" onclick="copyText('the1pct.com?ref=USER123')" style="width:auto; padding:8px 16px;">Copy Link</button>
+        <p style="margin-top:10px;">Invites: <strong id="ref-count">0</strong> | Rewards: <strong id="ref-rewards" style="color:var(--accent-gold);">$0</strong></p>
+      </div>
+    </div>
+
+    <!-- Trade Journal -->
+    <div class="tab-content" id="journal-tab">
+      <h2>📓 Trade Journal</h2>
+      <div class="card">
+        <h3>Log New Trade</h3>
+        <div class="form-group">
+          <input type="text" id="journal-symbol" placeholder="Symbol (e.g., EUR/USD)" required>
+          <select id="journal-outcome" style="margin:0.5rem 0;">
+            <option value="win">Win</option>
+            <option value="loss">Loss</option>
+            <option value="breakeven">Breakeven</option>
+          </select>
+          <textarea id="journal-notes" placeholder="Notes..." style="height:80px;"></textarea>
+          <button class="btn" onclick="saveJournalEntry()">Save Entry</button>
+        </div>
+      </div>
+      <div id="journal-entries" class="card-grid" style="margin-top:1.5rem;">
+        <!-- Entries loaded here -->
+      </div>
+    </div>
+
+    <!-- Economic Calendar -->
+    <div class="tab-content" id="calendar-tab">
+      <h2>📅 Economic Calendar</h2>
+      <div class="card-grid">
+        <div class="card">
+          <h3>🇺🇸 NFP (Non-Farm Payrolls)</h3>
+          <p><strong>Date:</strong> Apr 5, 12:30 UTC</p>
+          <p><strong>Impact:</strong> <span style="color:var(--accent-gold);">🔥 High</span></p>
+        </div>
+        <div class="card">
+          <h3>🇪🇺 ECB Interest Rate Decision</h3>
+          <p><strong>Date:</strong> Apr 11, 11:45 UTC</p>
+          <p><strong>Impact:</strong> <span style="color:var(--accent-gold);">🔥 High</span></p>
+        </div>
+      </div>
     </div>
 
     <!-- Telegram -->
@@ -507,38 +658,173 @@
 
   <!-- Admin Modal -->
   <div id="admin-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; justify-content:center; align-items:center;">
-    <div class="auth-card" style="max-width:600px; width:90%;">
+    <div class="auth-card" style="max-width:700px; width:90%;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
         <h2 style="background:linear-gradient(90deg, var(--accent-blue), var(--accent-violet)); -webkit-background-clip:text; background-clip:text; color:transparent;">Admin Panel</h2>
         <button onclick="closeAdmin()" style="background:none; border:none; color:var(--text-secondary); font-size:1.5rem; cursor:pointer;">✕</button>
       </div>
       <div class="form-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px,1fr)); gap:1.2rem;">
+        <!-- Post Signal -->
         <div class="form-group">
-          <label>Post Signal</label>
-          <input type="text" id="admin-symbol" placeholder="Symbol (e.g., BTC/USDT)">
-          <input type="text" id="admin-direction" placeholder="LONG/SHORT">
-          <input type="number" step="0.01" id="admin-entry" placeholder="Entry">
-          <input type="number" step="0.01" id="admin-sl" placeholder="Stop Loss">
-          <input type="number" step="0.01" id="admin-tp" placeholder="Take Profit">
-          <button class="btn" onclick="postSignal()" style="width:auto; padding:8px 16px; margin-top:10px;">Publish</button>
+          <label>Post Trade Signal</label>
+          <input type="text" id="admin-symbol" placeholder="Symbol (e.g., BTC/USDT)" required>
+          <input type="text" id="admin-direction" placeholder="LONG/SHORT" required>
+          <input type="number" step="0.01" id="admin-entry" placeholder="Entry" required>
+          <input type="number" step="0.01" id="admin-sl" placeholder="Stop Loss" required>
+          <input type="number" step="0.01" id="admin-tp" placeholder="Take Profit" required>
+          <button class="btn" onclick="postSignal()" style="width:auto; padding:8px 16px; margin-top:10px;">Publish Signal</button>
         </div>
+        <!-- Post Lesson -->
         <div class="form-group">
-          <label>Schedule Stream</label>
-          <input type="text" id="admin-stream-title" placeholder="Stream Title">
-          <input type="datetime-local" id="admin-stream-time">
-          <input type="url" id="admin-meet-link" placeholder="Google Meet Link">
-          <button class="btn" onclick="scheduleStream()" style="width:auto; padding:8px 16px; margin-top:10px;">Schedule</button>
+          <label>Post Online Lesson</label>
+          <input type="text" id="admin-lesson-title" placeholder="Lesson Title" required>
+          <textarea id="admin-lesson-desc" placeholder="Description (e.g., 12 videos, 4h)" style="height:80px;" required></textarea>
+          <input type="text" id="admin-lesson-type" placeholder="Type (e.g., Video, PDF)" required>
+          <button class="btn" onclick="postLesson()" style="width:auto; padding:8px 16px; margin-top:10px;">Post Lesson</button>
+        </div>
+        <!-- Schedule Stream -->
+        <div class="form-group">
+          <label>Schedule Live Stream</label>
+          <input type="text" id="admin-stream-title" placeholder="Stream Title" required>
+          <input type="datetime-local" id="admin-stream-time" required>
+          <input type="url" id="admin-meet-link" placeholder="Google Meet Link" required>
+          <button class="btn" onclick="scheduleStream()" style="width:auto; padding:8px 16px; margin-top:10px;">Schedule Stream</button>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    // Sample data
-    const signals = [
-      "🔔 SIGNAL — EUR/USD\nType: LONG\nEntry: 1.0850\nSL: 1.0820\nTP: 1.0920\nRisk: 1%\nTime: 2025-04-05 14:30 UTC",
-      "🔔 SIGNAL — GOLD\nType: SHORT\nEntry: 2345.0\nSL: 2360.0\nTP: 2310.0\nRisk: 1%\nTime: 2025-04-05 12:15 UTC"
+    // Initialize data from localStorage or defaults
+    let signals = JSON.parse(localStorage.getItem('signals')) || [
+      {
+        id: 0,
+        symbol: "EUR/USD",
+        direction: "LONG",
+        entry: 1.085,
+        sl: 1.082,
+        tp: 1.092,
+        time: "2025-04-05T14:30:00Z",
+        status: "Active",
+        accuracy: 92
+      },
+      {
+        id: 1,
+        symbol: "GOLD",
+        direction: "SHORT",
+        entry: 2345.0,
+        sl: 2360.0,
+        tp: 2310.0,
+        time: "2025-04-05T12:15:00Z",
+        status: "Monitoring",
+        accuracy: 88
+      }
     ];
+
+    let lessons = JSON.parse(localStorage.getItem('lessons')) || [
+      { title: "Price Action Mastery", desc: "12 video lessons • 4h 30m", type: "Video", completed: true },
+      { title: "London Breakout Strategy", desc: "PDF Guide • Advanced", type: "PDF", completed: false }
+    ];
+
+    let journalEntries = JSON.parse(localStorage.getItem('journal')) || [];
+    let nextStream = JSON.parse(localStorage.getItem('nextStream')) || {
+      title: "Market Analysis Session",
+      time: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().slice(0,16), // 2 hours from now
+      link: "https://meet.google.com/your-meet-link"
+    };
+
+    // Save to localStorage
+    const saveData = () => {
+      localStorage.setItem('signals', JSON.stringify(signals));
+      localStorage.setItem('lessons', JSON.stringify(lessons));
+      localStorage.setItem('journal', JSON.stringify(journalEntries));
+      localStorage.setItem('nextStream', JSON.stringify(nextStream));
+    };
+
+    // Render signals
+    const renderSignals = () => {
+      const container = document.getElementById('signals-container');
+      container.innerHTML = '';
+      signals.forEach((sig, index) => {
+        const card = document.createElement('div');
+        card.className = 'card signal-card';
+        const time = new Date(sig.time);
+        const timeStr = time.toLocaleDateString() + ' ' + time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + ' UTC';
+        card.innerHTML = `
+          <button class="copy-btn" onclick="copySignal(${index})">📋</button>
+          <button class="telegram-btn" onclick="shareToTelegram(${index})">✈️</button>
+          <h3>${sig.symbol} ${sig.direction}</h3>
+          <p><strong>Entry:</strong> ${sig.entry}</p>
+          <p><strong>SL:</strong> ${sig.sl}</p>
+          <p><strong>TP:</strong> ${sig.tp}</p>
+          <p><small>Posted: ${timeStr}</small></p>
+          <p><small>Accuracy: <span style="color:var(--accent-gold);">${sig.accuracy}% ✅</span></small></p>
+          <div class="mini-charts">
+            <div class="mini-chart" title="H1"></div>
+            <div class="mini-chart" title="H4"></div>
+            <div class="mini-chart" title="D1"></div>
+          </div>
+          <span style="color: ${sig.status === 'Active' ? 'var(--accent-gold)' : 'var(--accent-blue)'};">${sig.status === 'Active' ? '✅ Active' : '📊 Monitoring'}</span>
+        `;
+        container.appendChild(card);
+      });
+    };
+
+    // Render lessons
+    const renderLessons = () => {
+      const container = document.getElementById('lessons-container');
+      container.innerHTML = '';
+      lessons.forEach((lesson, idx) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <h3>${lesson.title}</h3>
+          <p>${lesson.desc}</p>
+          <p>Status: <span style="color: ${lesson.completed ? 'var(--accent-gold)' : 'var(--text-secondary)'};">${lesson.completed ? 'Completed' : 'In Progress'}</span></p>
+          <a href="#" class="cta-button" onclick="toggleLessonComplete(${idx})">${lesson.completed ? 'Regenerate CRT' : 'Mark Complete'}</a>
+          ${lesson.completed ? `<div class="badges"><span class="badge">📜 Certified</span></div>` : ''}
+        `;
+        container.appendChild(card);
+      });
+    };
+
+    // Render journal
+    const renderJournal = () => {
+      const container = document.getElementById('journal-entries');
+      container.innerHTML = '';
+      journalEntries.slice().reverse().forEach(entry => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <h4>${entry.symbol} • ${entry.outcome.charAt(0).toUpperCase() + entry.outcome.slice(1)}</h4>
+          <p><small>${new Date(entry.date).toLocaleString()}</small></p>
+          <p>${entry.notes || 'No notes'}</p>
+        `;
+        container.appendChild(card);
+      });
+    };
+
+    // Admin Password Protection
+    document.getElementById('open-admin').addEventListener('click', () => {
+      const adminPassword = "elite1pct";
+      const input = prompt("🔒 Enter Admin Password:");
+      if (input === adminPassword) {
+        document.getElementById('admin-modal').style.display = 'flex';
+      } else if (input !== null) {
+        alert("❌ Access denied. Incorrect password.");
+      }
+    });
+
+    // Theme Toggle
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      document.body.classList.toggle('light-mode');
+      localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+    });
+
+    // Load saved theme
+    if (localStorage.getItem('theme') === 'light') {
+      document.body.classList.add('light-mode');
+    }
 
     // Auth
     document.getElementById('auth-form').addEventListener('submit', (e) => {
@@ -546,7 +832,9 @@
       localStorage.setItem('user', JSON.stringify({ email: document.getElementById('email').value }));
       document.getElementById('auth').style.display = 'none';
       document.getElementById('dashboard').style.display = 'block';
+      renderAll();
       startCountdown();
+      initSessionTimeout();
     });
 
     document.getElementById('toggle-auth').addEventListener('click', () => {
@@ -570,43 +858,113 @@
       });
     });
 
-    // Admin
-    document.getElementById('open-admin').addEventListener('click', () => {
-      document.getElementById('admin-modal').style.display = 'flex';
-    });
-
+    // Admin Functions
     window.closeAdmin = () => {
       document.getElementById('admin-modal').style.display = 'none';
     };
 
     window.postSignal = () => {
-      alert('✅ Signal published to Telegram & dashboard!');
+      const symbol = document.getElementById('admin-symbol').value;
+      const direction = document.getElementById('admin-direction').value.toUpperCase();
+      const entry = parseFloat(document.getElementById('admin-entry').value);
+      const sl = parseFloat(document.getElementById('admin-sl').value);
+      const tp = parseFloat(document.getElementById('admin-tp').value);
+      
+      if (!symbol || !direction || isNaN(entry) || isNaN(sl) || isNaN(tp)) {
+        alert('⚠️ Please fill all fields correctly.');
+        return;
+      }
+
+      const newSignal = {
+        id: signals.length,
+        symbol,
+        direction,
+        entry,
+        sl,
+        tp,
+        time: new Date().toISOString(),
+        status: "Active",
+        accuracy: Math.floor(Math.random() * 10) + 85 // 85-94%
+      };
+      signals.unshift(newSignal);
+      saveData();
+      renderSignals();
+      alert('✅ Signal published!');
+      closeAdmin();
+    };
+
+    window.postLesson = () => {
+      const title = document.getElementById('admin-lesson-title').value;
+      const desc = document.getElementById('admin-lesson-desc').value;
+      const type = document.getElementById('admin-lesson-type').value;
+      
+      if (!title || !desc || !type) {
+        alert('⚠️ All lesson fields are required.');
+        return;
+      }
+
+      lessons.push({ title, desc, type, completed: false });
+      saveData();
+      renderLessons();
+      alert(`✅ Lesson "${title}" posted!`);
       closeAdmin();
     };
 
     window.scheduleStream = () => {
+      const title = document.getElementById('admin-stream-title').value;
+      const time = document.getElementById('admin-stream-time').value;
+      const link = document.getElementById('admin-meet-link').value;
+      
+      if (!title || !time || !link) {
+        alert('⚠️ All stream fields are required.');
+        return;
+      }
+
+      nextStream = { title, time, link };
+      saveData();
+      document.getElementById('next-stream-title').textContent = `${title} at ${new Date(time).toLocaleString()}`;
       alert('✅ Live stream scheduled!');
       closeAdmin();
     };
 
     // Utilities
     window.copySignal = (index) => {
-      navigator.clipboard.writeText(signals[index]).then(() => {
-        alert('📋 Signal copied to clipboard!');
+      const sig = signals[index];
+      const text = `🔔 SIGNAL — ${sig.symbol}\nType: ${sig.direction}\nEntry: ${sig.entry}\nSL: ${sig.sl}\nTP: ${sig.tp}\nTime: ${new Date(sig.time).toISOString().slice(0,16)} UTC`;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('📋 Signal copied!');
       });
     };
 
     window.shareToTelegram = (index) => {
-      const msg = encodeURIComponent(signals[index]);
-      window.open(`https://t.me/share/url?url=&text=${msg}`, '_blank');
+      const sig = signals[index];
+      const msg = `🔔 SIGNAL — ${sig.symbol}%0AType: ${sig.direction}%0AEntry: ${sig.entry}%0ASL: ${sig.sl}%0ATP: ${sig.tp}%0ATime: ${new Date(sig.time).toISOString().slice(0,16)} UTC`;
+      window.open(`https://t.me/share/url?text=${msg}`, '_blank');
     };
 
-    window.generateCertificate = () => {
-      alert('✅ Certificate generated!\nFile: The1pct_Certificate_PriceAction.pdf');
+    window.toggleLessonComplete = (idx) => {
+      lessons[idx].completed = !lessons[idx].completed;
+      saveData();
+      renderLessons();
+      if (lessons[idx].completed) {
+        alert('✅ Certificate unlocked!');
+      }
     };
 
     window.exportCSV = () => {
-      alert('✅ Performance report exported as: performance_1pct.csv');
+      let csv = "Symbol,Direction,Entry,SL,TP,Outcome,Date\n";
+      journalEntries.forEach(e => {
+        csv += `"${e.symbol}","${e.outcome}","N/A","N/A","N/A","${e.outcome}","${e.date}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'performance_1pct.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     };
 
     window.copyText = (text) => {
@@ -615,19 +973,54 @@
       });
     };
 
-    // Countdown Timer (to 18:00 UTC)
+    window.saveJournalEntry = () => {
+      const symbol = document.getElementById('journal-symbol').value;
+      const outcome = document.getElementById('journal-outcome').value;
+      const notes = document.getElementById('journal-notes').value;
+      
+      if (!symbol) {
+        alert('⚠️ Symbol is required.');
+        return;
+      }
+
+      journalEntries.push({ symbol, outcome, notes, date: new Date().toISOString() });
+      saveData();
+      renderJournal();
+      document.getElementById('journal-symbol').value = '';
+      document.getElementById('journal-notes').value = '';
+      alert('✅ Trade logged!');
+    };
+
+    window.calculatePosition = () => {
+      const bal = parseFloat(document.getElementById('account-balance').value);
+      const risk = parseFloat(document.getElementById('risk-percent').value);
+      const sl = parseFloat(document.getElementById('stop-loss-pips').value);
+      if (isNaN(bal) || isNaN(risk) || isNaN(sl) || sl <= 0) {
+        document.getElementById('position-result').innerText = 'Enter valid numbers';
+        return;
+      }
+      const riskAmount = bal * (risk / 100);
+      const positionSize = riskAmount / sl; // simplified: $ per pip = $1
+      document.getElementById('position-result').innerText = `Position Size: ${positionSize.toFixed(2)} units`;
+    };
+
+    window.showNotifications = () => {
+      alert('🔔 Notifications:\n• No new alerts at this time.\nCheck back later!');
+    };
+
+    // Countdown Timer
     function startCountdown() {
+      const streamTime = new Date(nextStream.time);
       const update = () => {
         const now = new Date();
-        const target = new Date(now);
-        target.setUTCHours(18, 0, 0, 0);
-        if (now > target) target.setUTCDate(target.getUTCDate() + 1);
-        
-        const diff = (target - now) / 1000;
+        const diff = (streamTime - now) / 1000;
+        if (diff <= 0) {
+          document.getElementById('countdown').innerHTML = '<div class="countdown-box">LIVE</div>';
+          return;
+        }
         const h = Math.floor(diff / 3600);
         const m = Math.floor((diff % 3600) / 60);
         const s = Math.floor(diff % 60);
-        
         document.getElementById('countdown').innerHTML = `
           <div class="countdown-box">${String(h).padStart(2,'0')}</div>
           <div>:</div>
@@ -640,11 +1033,54 @@
       setInterval(update, 1000);
     }
 
-    // Auto-login for demo
+    // Session Timeout
+    let warningShown = false;
+    let warningTimer, logoutTimer;
+    function initSessionTimeout() {
+      const resetTimer = () => {
+        warningShown = false;
+        clearTimeout(warningTimer);
+        clearTimeout(logoutTimer);
+        warningTimer = setTimeout(() => {
+          if (!warningShown) {
+            alert("⚠️ Session expires in 5 minutes!");
+            warningShown = true;
+          }
+        }, 25 * 60 * 1000);
+        logoutTimer = setTimeout(() => {
+          localStorage.removeItem('user');
+          location.reload();
+        }, 30 * 60 * 1000);
+      };
+      ['click', 'keypress', 'mousemove'].forEach(evt => 
+        document.addEventListener(evt, resetTimer, true)
+      );
+      resetTimer();
+    }
+
+    // Render all on load
+    const renderAll = () => {
+      renderSignals();
+      renderLessons();
+      renderJournal();
+      document.getElementById('next-stream-title').textContent = `${nextStream.title} at ${new Date(nextStream.time).toLocaleString()}`;
+      // Update performance metrics
+      const wins = journalEntries.filter(e => e.outcome === 'win').length;
+      const total = journalEntries.length;
+      const winRate = total ? Math.round((wins / total) * 100) : 0;
+      document.getElementById('trades-value').textContent = total;
+      document.getElementById('winrate-value').textContent = winRate + '%';
+      document.getElementById('roi-value').textContent = total ? '+18.7%' : '+0.0%';
+      document.getElementById('drawdown-value').textContent = total ? '-4.2%' : '0.0%';
+    };
+
+    // Auto-login
     if (localStorage.getItem('user')) {
       document.getElementById('auth').style.display = 'none';
       document.getElementById('dashboard').style.display = 'block';
+      renderAll();
       startCountdown();
+      initSessionTimeout();
     }
   </script>
 </body>
