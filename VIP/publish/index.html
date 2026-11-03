@@ -5142,6 +5142,99 @@ Object.assign(CHANGE_VAL, {
   };
 })();
 
+/* ==================== Teacher sign-in and sync with Supabase (works when the app is hosted, e.g. on Vercel) ==================== */
+const SB_SESSION_KEY = 'gems-sb-session';
+function sbSession() { try { return JSON.parse(localStorage.getItem(SB_SESSION_KEY) || 'null'); } catch (e) { return null; } }
+function sbSaveSession(s) { try { localStorage.setItem(SB_SESSION_KEY, JSON.stringify(s)); } catch (e) { } }
+function sbBase() { return ((DB.cloud && DB.cloud.url) || '').replace(/\/+$/, ''); }
+function sbKey() { return (DB.cloud && DB.cloud.key) || ''; }
+async function sbReq(path, o = {}) {
+  const sess = sbSession();
+  const headers = { apikey: sbKey(), Authorization: 'Bearer ' + ((sess && sess.access) || sbKey()), 'Content-Type': 'application/json' };
+  if (o.prefer) headers.Prefer = o.prefer;
+  const r = await fetch(sbBase() + path, { method: o.method || 'GET', headers, body: o.body ? JSON.stringify(o.body) : undefined });
+  let data = null; try { data = await r.json(); } catch (e) { }
+  if (!r.ok) { const err = new Error((data && (data.msg || data.message || data.error_description)) || ('HTTP ' + r.status)); err.status = r.status; throw err; }
+  return data;
+}
+async function sbAuth(kind, email, password) {
+  const path = kind === 'up' ? '/auth/v1/signup' : '/auth/v1/token?grant_type=password';
+  const data = await sbReq(path, { method: 'POST', body: { email, password } });
+  if (!data || !data.access_token) return { needsConfirm: true };
+  sbSaveSession({ access: data.access_token, refresh: data.refresh_token, uid: data.user.id, email });
+  return { ok: true };
+}
+/* row <-> app mapping */
+const sbStudentRow = s => ({ id: s.id, name: s.name, dv_name: s.dvName || '', cls: s.cls || '', tch: s.tch || '', level: s.level || '', acad: s.acad || '', need: s.need || '', guardian: s.guardian || '', phone: s.phone || '', index_no: s.indexNo || '', nid: s.nid || '', address: s.address || '', program: s.program || '', goals: s.goals || [], note: s.note || '' });
+const sbStudentFromRow = r => ({ id: r.id, name: r.name || '', dvName: r.dv_name || '', cls: r.cls || '', tch: r.tch || '', level: r.level || '', acad: r.acad || '', need: r.need || '', guardian: r.guardian || '', phone: r.phone || '', indexNo: r.index_no || '', nid: r.nid || '', address: r.address || '', program: r.program || '', goals: r.goals || [], note: r.note || '' });
+async function sbUpsert(table, rows, onConflict) {
+  for (let i = 0; i < rows.length; i += 500) {
+    await sbReq(`/rest/v1/${table}?on_conflict=${onConflict}`, { method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal', body: rows.slice(i, i + 500) });
+  }
+}
+async function sbSync() {
+  const sess = sbSession();
+  if (!sess) throw new Error('Sign in first');
+  await sbUpsert('gems_teachers', DB.teachers.map(t => ({ id: t.id, name: t.name, role: t.role || '' })), 'id');
+  await sbUpsert('gems_groups', DB.classes.map(g => ({ id: g.id, name: g.name, teacher_id: g.tch || '' })), 'id');
+  await sbUpsert('gems_students', DB.students.map(sbStudentRow), 'id');
+  const att = [];
+  Object.keys(DB.att || {}).forEach(k => { const [date, cls] = k.split('|'); Object.keys(DB.att[k]).forEach(sid => att.push({ date, class_id: cls, student_id: sid, status: DB.att[k][sid] })); });
+  await sbUpsert('gems_attendance', att, 'date,class_id,student_id');
+  // pull back what this teacher owns (row-level security limits it to their own rows)
+  const [teachers, groups, students, attRows] = await Promise.all([
+    sbReq('/rest/v1/gems_teachers?select=*'), sbReq('/rest/v1/gems_groups?select=*'),
+    sbReq('/rest/v1/gems_students?select=*'), sbReq('/rest/v1/gems_attendance?select=*')]);
+  const mergeById = (list, rows, fromRow) => { rows.forEach(r => { const i = list.findIndex(x => x.id === r.id); const o = fromRow(r); if (i >= 0) list[i] = o; else list.push(o); }); };
+  mergeById(DB.teachers, teachers || [], r => ({ id: r.id, name: r.name, role: r.role || '' }));
+  mergeById(DB.classes, groups || [], r => ({ id: r.id, name: r.name, tch: r.teacher_id || '' }));
+  mergeById(DB.students, students || [], sbStudentFromRow);
+  (attRows || []).forEach(r => { const k = r.date + '|' + r.class_id; DB.att[k] = DB.att[k] || {}; DB.att[k][r.student_id] = r.status; });
+  DB.cloudSyncedAt = new Date().toISOString();
+  save();
+}
+function vCloudAccount() {
+  const sess = sbSession();
+  const last = DB.cloudSyncedAt ? new Date(DB.cloudSyncedAt).toLocaleString() : 'never';
+  if (!sess) return `<div class="card"><div class="f" style="margin-top:0">Teacher sign-in</div>
+    <div class="sub" style="margin:4px 0 8px">Each teacher signs in with their own email. You only see your own students.</div>
+    <label class="f">Email<input id="sb_email" type="email" autocomplete="email"></label>
+    <label class="f">Password<input id="sb_pass" type="password" autocomplete="current-password"></label>
+    <div class="row" style="margin-top:10px"><button class="btn sm" data-a="sbSignIn">Sign in</button><button class="btn ghost sm" data-a="sbSignUp">Create account</button></div>
+    <div id="sbStatus" class="sub" style="margin-top:10px"></div></div>`;
+  return `<div class="card"><div class="f" style="margin-top:0">Signed in</div><div class="sub" style="margin:4px 0 8px">${esc(sess.email)}</div>
+    <div class="sub">Last sync: ${esc(last)}</div>
+    <div class="row" style="margin-top:10px"><button class="btn sm" data-a="sbSync">Sync now</button><button class="btn ghost sm" data-a="sbSignOut">Sign out</button></div>
+    <div id="sbStatus" class="sub" style="margin-top:10px"></div></div>`;
+}
+function sbSetStatus(html) { const el = $('#sbStatus'); if (el) el.innerHTML = html; }
+Object.assign(ACT, {
+  sbSignIn: async () => {
+    const email = ($('#sb_email').value || '').trim(), pw = $('#sb_pass').value || '';
+    if (!email || !pw) return sbSetStatus('Enter your email and password.');
+    sbSetStatus('Signing in…');
+    try { const r = await sbAuth('in', email, pw); if (r.needsConfirm) return sbSetStatus('Check your email to confirm the account, then sign in.'); toast('Signed in'); render(); }
+    catch (e) { sbSetStatus('<span style="color:#A52E2E">' + esc(e.message) + '</span>'); }
+  },
+  sbSignUp: async () => {
+    const email = ($('#sb_email').value || '').trim(), pw = $('#sb_pass').value || '';
+    if (!email || pw.length < 6) return sbSetStatus('Enter an email and a password of at least 6 characters.');
+    sbSetStatus('Creating account…');
+    try { const r = await sbAuth('up', email, pw); if (r.needsConfirm) return sbSetStatus('Account created. Check your email to confirm, then sign in.'); toast('Account created'); render(); }
+    catch (e) { sbSetStatus('<span style="color:#A52E2E">' + esc(e.message) + '</span>'); }
+  },
+  sbSignOut: () => { try { localStorage.removeItem(SB_SESSION_KEY); } catch (e) { } toast('Signed out'); render(); },
+  sbSync: async () => {
+    sbSetStatus('Syncing…');
+    try { await sbSync(); toast('Synced'); render(); }
+    catch (e) { sbSetStatus('<span style="color:#A52E2E">Sync failed: ' + esc(e.message) + '</span>'); }
+  }
+});
+(function () {
+  const prevCloud = vCloud;
+  vCloud = function () { return vCloudAccount() + prevCloud(); };
+})();
+
 /* ==================== Header, bottom bar, render, start ==================== */
 const NAV = [['home', 'Home', 'home'], ['students', 'Students', 'people'], ['attend', 'Attend', 'check'], ['tt', 'Timetable', 'grid'], ['more', 'More', 'dots']];
 function renderTop() {
